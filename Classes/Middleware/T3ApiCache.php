@@ -45,12 +45,12 @@ class T3ApiCache implements MiddlewareInterface
 
         $array = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
         $tableName = $this->getTableName($request);
-        $cacheTags = [$tableName];
-        //foreach ($array['hydra:member'] as $key => $value) {
-        //    if (isset($value['uid'])) {
-        //        $cacheTags[] = $tableName . '_' . $value['uid'];
-        //    }
-        //}
+        $cacheTags = [];
+        foreach ($array['hydra:member'] as $key => $value) {
+            if (isset($value['uid'])) {
+                $cacheTags[] = $tableName . '_' . $value['uid'];
+            }
+        }
         $this->cache->set($cacheKey, $data, $cacheTags);
 
 
