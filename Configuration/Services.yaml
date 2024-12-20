@@ -1,0 +1,17 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Xima\T3ApiCache\:
+    resource: '../Classes/*'
+
+  cache.t3api_cache:
+    class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+    factory: [ '@TYPO3\CMS\Core\Cache\CacheManager', 'getCache' ]
+    arguments: [ 't3api_cache' ]
+
+  Xima\T3ApiCache\Middleware\T3ApiCache:
+    arguments:
+      $cache: '@cache.t3api_cache'

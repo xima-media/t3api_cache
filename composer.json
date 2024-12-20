@@ -1,0 +1,28 @@
+{
+	"name": "xima/t3api-cache",
+	"description": "Adds caching to the t3api extension.",
+	"type": "typo3-cms-extension",
+	"authors": [
+		{
+			"name": "Maik Schneider",
+			"email": "maik.schneider@xima.de"
+		}
+	],
+	"require": {
+		"sourcebroker/t3api": "^4.0"
+	}
+	,
+	"require-dev": {
+		"roave/security-advisories": "dev-latest"
+	},
+	"extra": {
+		"typo3/cms": {
+			"extension-key": "t3api_cache"
+		}
+	},
+	"autoload": {
+		"psr-4": {
+			"Xima\\T3ApiCache\\": "Classes"
+		}
+	}
+}
