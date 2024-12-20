@@ -10,8 +10,13 @@ services:
   cache.t3api_cache:
     class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
     factory: [ '@TYPO3\CMS\Core\Cache\CacheManager', 'getCache' ]
-    arguments: [ 'pages' ]
+    arguments: [ 't3api_cache' ]
 
   Xima\T3ApiCache\Middleware\T3ApiCache:
+    arguments:
+      $cache: '@cache.t3api_cache'
+
+  Xima\T3ApiCache\Hooks\TceMain:
+    public: true
     arguments:
       $cache: '@cache.t3api_cache'
