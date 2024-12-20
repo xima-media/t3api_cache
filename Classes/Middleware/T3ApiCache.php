@@ -77,7 +77,7 @@ class T3ApiCache implements MiddlewareInterface
         // strategy 2: add cache tag for the whole table
         // $cacheTags = [$tableName];
 
-        $this->cache->set($cacheKey, $data, $cacheTags);
+        $this->cache->set($cacheKey, $data, $cacheTags, $this->apiCacheAnnotation->getLifetime());
 
         return $response;
     }

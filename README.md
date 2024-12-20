@@ -14,15 +14,15 @@ The extension provides a new Annotation `@ApiCache` which can be used in your `A
 <?php
 
 /**
- * @ApiResource(
- *     collectionOperations={
- *         "get": {
- *             "path": "/news"
- *         }
- *     }
- * )
- * @ApiCache()
- */
+* @ApiResource(
+*     collectionOperations={
+*         "get": {
+*             "path": "/news"
+*         }
+*     }
+* )
+* @ApiCache()
+*/
 class Division extends AbstractEntity
 {
 }

@@ -12,6 +12,8 @@ class ApiCache
 
     protected array $queryParamsToIgnore = [];
 
+    protected ?int $lifetime = null;
+
     public function __construct(array $options = [])
     {
         if (isset($options['strategy'])) {
@@ -20,6 +22,19 @@ class ApiCache
         if (isset($options['queryParamsToIgnore'])) {
             $this->queryParamsToIgnore = $options['queryParamsToIgnore'];
         }
+        if (isset($options['lifetime'])) {
+            $this->lifetime = $options['lifetime'];
+        }
+    }
+
+    public function getStrategy(): string
+    {
+        return $this->strategy;
+    }
+
+    public function getLifetime(): ?int
+    {
+        return $this->lifetime;
     }
 
     public function getQueryParamsToIgnore(): array
