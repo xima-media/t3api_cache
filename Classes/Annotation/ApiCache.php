@@ -10,10 +10,16 @@ class ApiCache
 {
     protected string $strategy = '';
 
+    /**
+     * @var string[]
+     */
     protected array $queryParamsToIgnore = [];
 
     protected ?int $lifetime = null;
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function __construct(array $options = [])
     {
         if (isset($options['strategy'])) {
@@ -37,6 +43,9 @@ class ApiCache
         return $this->lifetime;
     }
 
+    /**
+     * @return string[]
+     */
     public function getQueryParamsToIgnore(): array
     {
         return $this->queryParamsToIgnore;

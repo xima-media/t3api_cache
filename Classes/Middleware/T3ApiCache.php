@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use ReflectionException;
 use SourceBroker\T3api\Domain\Model\ApiResource;
 use SourceBroker\T3api\Domain\Repository\ApiResourceRepository;
 use SourceBroker\T3api\Service\RouteService;
@@ -40,7 +41,7 @@ class T3ApiCache implements MiddlewareInterface
             return $handler->handle($request);
         }
 
-        $this->setApiCacheAnnotation($request);
+        $this->setApiCacheAnnotation();
         if (!$this->apiCacheAnnotation) {
             return $handler->handle($request);
         }
@@ -94,7 +95,10 @@ class T3ApiCache implements MiddlewareInterface
         }
     }
 
-    private function setApiCacheAnnotation(ServerRequestInterface $request): void
+    /**
+     * @throws ReflectionException
+     */
+    private function setApiCacheAnnotation(): void
     {
         $annotationReader = GeneralUtility::makeInstance(AnnotationReader::class);
         $annotations = $annotationReader->getClassAnnotations(new \ReflectionClass($this->apiResource->getEntity()));
