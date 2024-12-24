@@ -20,3 +20,6 @@ services:
     public: true
     arguments:
       $cache: '@cache.t3api_cache'
+
+  Xima\T3ApiCache\Reflection\ResourceReflectionFactory:
+    public: true

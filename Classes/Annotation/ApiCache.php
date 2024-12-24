@@ -8,7 +8,7 @@ namespace Xima\T3ApiCache\Annotation;
  */
 class ApiCache
 {
-    protected string $strategy = '';
+    protected CacheStrategy $strategy = CacheStrategy::MULTIPLE;
 
     /**
      * @var string[]
@@ -23,7 +23,7 @@ class ApiCache
     public function __construct(array $options = [])
     {
         if (isset($options['strategy'])) {
-            $this->strategy = $options['strategy'];
+            $this->strategy = CacheStrategy::from($options['strategy']);
         }
         if (isset($options['queryParamsToIgnore'])) {
             $this->queryParamsToIgnore = $options['queryParamsToIgnore'];
@@ -33,7 +33,7 @@ class ApiCache
         }
     }
 
-    public function getStrategy(): string
+    public function getStrategy(): CacheStrategy
     {
         return $this->strategy;
     }
