@@ -68,11 +68,6 @@ class ResourceReflectionService
         return $this->apiCacheAnnotation;
     }
 
-    public function isCacheable(): bool
-    {
-        return $this->cacheKey !== '';
-    }
-
     public function getCacheKey(): string
     {
         return $this->cacheKey;
