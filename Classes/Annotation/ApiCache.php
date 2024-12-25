@@ -8,12 +8,10 @@ namespace Xima\T3ApiCache\Annotation;
  */
 class ApiCache
 {
-    protected CacheStrategy $strategy = CacheStrategy::MULTIPLE;
-
     /**
      * @var string[]
      */
-    protected array $queryParamsToIgnore = [];
+    protected array $parametersToIgnore = [];
 
     protected ?int $lifetime = null;
 
@@ -22,20 +20,12 @@ class ApiCache
      */
     public function __construct(array $options = [])
     {
-        if (isset($options['strategy'])) {
-            $this->strategy = CacheStrategy::from($options['strategy']);
-        }
-        if (isset($options['queryParamsToIgnore'])) {
-            $this->queryParamsToIgnore = $options['queryParamsToIgnore'];
+        if (isset($options['parametersToIgnore'])) {
+            $this->parametersToIgnore = $options['parametersToIgnore'];
         }
         if (isset($options['lifetime'])) {
             $this->lifetime = $options['lifetime'];
         }
-    }
-
-    public function getStrategy(): CacheStrategy
-    {
-        return $this->strategy;
     }
 
     public function getLifetime(): ?int
@@ -46,8 +36,8 @@ class ApiCache
     /**
      * @return string[]
      */
-    public function getQueryParamsToIgnore(): array
+    public function getParametersToIgnore(): array
     {
-        return $this->queryParamsToIgnore;
+        return $this->parametersToIgnore;
     }
 }

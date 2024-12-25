@@ -3,19 +3,16 @@
 namespace Xima\T3ApiCache\Reflection;
 
 use Doctrine\Common\Annotations\AnnotationReader;
+use phpDocumentor\Reflection\Types\ClassString;
 use Psr\Http\Message\ServerRequestInterface;
 use SourceBroker\T3api\Domain\Model\ApiResource;
 use SourceBroker\T3api\Domain\Repository\ApiResourceRepository;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 use Xima\T3ApiCache\Annotation\ApiCache;
-use Xima\T3ApiCache\Annotation\CacheStrategy;
 
 class ResourceReflectionService
 {
     protected ?ApiCache $apiCacheAnnotation = null;
-
-    protected string $tableName = '';
 
     private ?ApiResource $apiResource = null;
 
@@ -28,7 +25,29 @@ class ResourceReflectionService
         $this->setApiResource();
         $this->setApiCacheAnnotation();
         $this->setCacheKey();
-        $this->setTableName();
+    }
+
+    private function setApiCacheAnnotation(): void
+    {
+        if ($this->apiResource === null) {
+            return;
+        }
+
+        $annotationReader = GeneralUtility::makeInstance(AnnotationReader::class);
+        /** @var ClassString $entityClass */
+        $entityClass = $this->apiResource->getEntity();
+        $annotations = $annotationReader->getClassAnnotations(new \ReflectionClass($entityClass));
+        foreach ($annotations as $annotation) {
+            if ($annotation instanceof ApiCache) {
+                $this->apiCacheAnnotation = $annotation;
+                return;
+            }
+        }
+    }
+
+    public function getApiResource(): ?ApiResource
+    {
+        return $this->apiResource;
     }
 
     protected function setApiResource(): void
@@ -43,33 +62,14 @@ class ResourceReflectionService
         }
     }
 
-    private function setApiCacheAnnotation(): void
+    public function getApiCacheAnnotation(): ?ApiCache
     {
-        $annotationReader = GeneralUtility::makeInstance(AnnotationReader::class);
-        $annotations = $annotationReader->getClassAnnotations(new \ReflectionClass($this->apiResource->getEntity()));
-        foreach ($annotations as $annotation) {
-            if ($annotation instanceof ApiCache) {
-                $this->apiCacheAnnotation = $annotation;
-                return;
-            }
-        }
-    }
-
-    private function setTableName(): void
-    {
-        $entity = $this->apiResource->getEntity();
-        $dataMapper = GeneralUtility::makeInstance(DataMapper::class);
-        $this->tableName = $dataMapper->getDataMap($entity)->getTableName();
-    }
-
-    public function getTableName(): string
-    {
-        return $this->tableName;
+        return $this->apiCacheAnnotation;
     }
 
     public function isCacheable(): bool
     {
-        return $this->cacheKey !== '' && $this->tableName !== '';
+        return $this->cacheKey !== '';
     }
 
     public function getCacheKey(): string
@@ -79,8 +79,12 @@ class ResourceReflectionService
 
     protected function setCacheKey(): void
     {
+        if (!$this->apiCacheAnnotation) {
+            return;
+        }
+
         $queryParams = $this->request->getQueryParams();
-        $paramsToIgnore = $this->apiCacheAnnotation->getQueryParamsToIgnore();
+        $paramsToIgnore = $this->apiCacheAnnotation->getParametersToIgnore();
         if (in_array('*', $paramsToIgnore, true) && count($queryParams)) {
             return;
         }
@@ -92,15 +96,5 @@ class ResourceReflectionService
         }
 
         $this->cacheKey = md5($this->request->getUri()->getPath() . '?' . http_build_query($queryParams));
-    }
-
-    public function getCacheStrategy(): ?CacheStrategy
-    {
-        return $this->apiCacheAnnotation?->getStrategy();
-    }
-
-    public function getLifetime(): int
-    {
-        return $this->apiCacheAnnotation->getLifetime() ?? 86400;
     }
 }

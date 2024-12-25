@@ -11,7 +11,7 @@ readonly class TceMain
     }
 
     /**
-     * @param array{table: string, uid: int, uid_page: int, TSConfig: array, tags: array, clearCacheEnabled: bool} $params
+     * @param array{tags: array<string, array<int, int>>} $params
      */
     public function clearCachePostProc(
         array $params

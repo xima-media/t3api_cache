@@ -23,3 +23,6 @@ services:
 
   Xima\T3ApiCache\Reflection\ResourceReflectionFactory:
     public: true
+
+  Xima\T3ApiCache\Serializer\Subscriber\CacheTagSubscriber:
+    public: true
