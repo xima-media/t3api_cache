@@ -7,6 +7,7 @@ use phpDocumentor\Reflection\Types\ClassString;
 use Psr\Http\Message\ServerRequestInterface;
 use SourceBroker\T3api\Domain\Model\ApiResource;
 use SourceBroker\T3api\Domain\Repository\ApiResourceRepository;
+use SourceBroker\T3api\Routing\Enhancer\ResourceEnhancer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Xima\T3ApiCache\Annotation\ApiCache;
 
@@ -83,18 +84,27 @@ class ResourceReflectionService
             return;
         }
 
-        $queryParams = $this->request->getQueryParams();
-        $paramsToIgnore = $this->apiCacheAnnotation->getParametersToIgnore();
-        if (in_array('*', $paramsToIgnore, true) && count($queryParams)) {
+        $parametersToIgnore = $this->apiCacheAnnotation->getParametersToIgnore();
+        if (in_array('*', $parametersToIgnore, true)) {
             return;
         }
 
-        foreach ($queryParams as $key => $value) {
-            if (!empty($value) && in_array($key, $paramsToIgnore, true)) {
-                return;
-            }
+        $validRequestParams = array_filter($this->request->getQueryParams());
+        unset($validRequestParams[ResourceEnhancer::PARAMETER_NAME]);
+        if (count(array_intersect(array_keys($validRequestParams), $parametersToIgnore)) > 0) {
+            return;
         }
 
-        $this->cacheKey = md5($this->request->getUri()->getPath() . '?' . http_build_query($queryParams));
+        $allowedParameters = [$this->apiResource->getPagination()->getPageParameterName()];
+        foreach ($this->apiResource->getMainCollectionOperation()?->getFilters() ?? [] as $filter) {
+            $allowedParameters[] = $filter->getParameterName();
+        }
+        $allowedParameters = array_unique($allowedParameters);
+
+        if (count(array_diff(array_keys($validRequestParams), $allowedParameters)) > 0) {
+            return;
+        }
+
+        $this->cacheKey = md5($this->request->getUri()->getPath() . '?' . http_build_query($validRequestParams));
     }
 }
