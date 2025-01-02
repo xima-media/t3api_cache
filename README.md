@@ -20,15 +20,15 @@ The extension provides a new Annotation `@ApiCache` which can be used in your `A
 use Xima\T3ApiCache\Annotation\ApiCache;
 
 /**
- * @ApiResource(
- *     collectionOperations={
- *         "get": {
- *             "path": "/news"
- *         }
- *     }
- * )
- * @ApiCache
- */
+* @ApiResource(
+*     collectionOperations={
+*         "get": {
+*             "path": "/news"
+*         }
+*     }
+* )
+* @ApiCache
+*/
 class News extends AbstractEntity
 {
 }
@@ -51,10 +51,10 @@ use SourceBroker\T3api\Filter\SearchFilter;
 use Xima\T3ApiCache\Annotation\ApiCache;
 
 /**
- * ...
- * @ApiFilter(SearchFilter::class, properties={"title": "partial", "teaser": "partial"}, arguments={"parameterName": "search"})
- * @ApiCache(parametersToIgnore={"search"})
- */
+* ...
+* @ApiFilter(SearchFilter::class, properties={"title": "partial", "teaser": "partial"}, arguments={"parameterName": "search"})
+* @ApiCache(parametersToIgnore={"search"})
+*/
 class ExampleResource extends AbstractEntity
 {
 }
@@ -70,9 +70,9 @@ The lifetime of the cache entry in seconds. Default is 86400 (1 day).
 use Xima\T3ApiCache\Annotation\ApiCache;
 
 /**
- * ...
- * @ApiCache(lifetime=3600) // Cache lifetime set to 1 hour
- */
+* ...
+* @ApiCache(lifetime=3600) // Cache lifetime set to 1 hour
+*/
 class ExampleResource extends AbstractEntity
 {
 }
