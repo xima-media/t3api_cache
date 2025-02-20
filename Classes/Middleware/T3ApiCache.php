@@ -33,7 +33,7 @@ readonly class T3ApiCache implements MiddlewareInterface
         $reflectionService = $this->resourceReflectionFactory->createForRequest($request);
 
         $cacheKey = $reflectionService->getCacheKey();
-        if (!$reflectionService->getCacheKey()) {
+        if (!$cacheKey) {
             return $handler->handle($request);
         }
 
