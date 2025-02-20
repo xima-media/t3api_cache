@@ -50,7 +50,7 @@ readonly class T3ApiCache implements MiddlewareInterface
         $lifetime = $reflectionService->getApiCacheAnnotation()?->getLifetime() ?? 86400;
 
         $apiData = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
-        $cacheTags = [];
+        $cacheTags = [$reflectionService->getTableName()];
         self::collectAndRemoveCacheTags($apiData, $cacheTags);
 
         $this->cache->set($cacheKey, json_encode($apiData, JSON_THROW_ON_ERROR), $cacheTags, $lifetime);

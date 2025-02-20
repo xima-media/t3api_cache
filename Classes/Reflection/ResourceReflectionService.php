@@ -9,6 +9,7 @@ use SourceBroker\T3api\Domain\Model\ApiResource;
 use SourceBroker\T3api\Domain\Repository\ApiResourceRepository;
 use SourceBroker\T3api\Routing\Enhancer\ResourceEnhancer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 use Xima\T3ApiCache\Annotation\ApiCache;
 
 class ResourceReflectionService
@@ -101,5 +102,11 @@ class ResourceReflectionService
         }
 
         $this->cacheKey = md5($this->request->getUri()->getPath() . '?' . http_build_query($validRequestParams));
+    }
+
+    public function getTableName(): string
+    {
+        $dataMapper = GeneralUtility::makeInstance(DataMapper::class);
+        return $dataMapper->getDataMap($this->apiResource->getEntity())->getTableName();
     }
 }
