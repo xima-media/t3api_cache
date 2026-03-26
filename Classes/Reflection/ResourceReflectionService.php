@@ -50,12 +50,7 @@ class ResourceReflectionService
         foreach ($annotations as $annotation) {
             if ($annotation instanceof ApiCache) {
                 $this->apiCacheAnnotation = $annotation;
-            }
-        }
-
-        // Collect @ApiCacheRoundDatetime annotations from class level
-        foreach ($annotations as $annotation) {
-            if ($annotation instanceof ApiCacheRoundDatetime) {
+            } elseif ($annotation instanceof ApiCacheRoundDatetime) {
                 $this->apiCacheRoundDatetimeAnnotations[] = $annotation;
             }
         }
