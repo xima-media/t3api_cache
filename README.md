@@ -175,5 +175,44 @@ class Event extends AbstractEntity
 }
 ```
 
+**Example: VirtualProperty with SerializedName**
+
+When using a custom serialized name via `@VirtualProperty` and `@SerializedName`, the annotation
+automatically picks up the serialized name as the query parameter name — no need to specify `parameterName` manually:
+
+```php
+<?php
+
+use SourceBroker\T3api\Annotation\Serializer\SerializedName;
+use SourceBroker\T3api\Annotation\Serializer\VirtualProperty;
+use Xima\T3ApiCache\Annotation\ApiCache;
+use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
+
+/**
+* ...
+* @ApiCache
+*/
+class Event extends AbstractEntity
+{
+    /**
+     * @VirtualProperty
+     * @SerializedName("event_date")
+     * @ApiCacheRoundDatetime(precision="hour")
+     */
+    public function getEventDate(): string
+    {
+        return $this->date->format('c');
+    }
+}
+```
+
+In this example, the query parameter `event_date` will be automatically rounded. The parameter name resolution
+follows this priority:
+
+1. Explicit `parameterName` on `@ApiCacheRoundDatetime`
+2. `@SerializedName` value (on property or method)
+3. `@VirtualProperty` name (on method, if set)
+4. PHP property or method name
+
 The annotation supports Unix timestamps, ISO 8601 dates, and date-only strings (e.g. `2025-03-26`).
 The rounded value is returned in the same format as the input.
