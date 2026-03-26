@@ -46,6 +46,7 @@ class ResourceReflectionService
             if ($annotation instanceof ApiCache) {
                 $this->apiCacheAnnotation = $annotation;
             }
+            // Collect both ApiCache and ApiCacheRoundDatetime annotations
             if ($annotation instanceof ApiCacheRoundDatetime) {
                 $this->apiCacheRoundDatetimeAnnotation = $annotation;
             }

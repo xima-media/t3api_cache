@@ -126,7 +126,7 @@ class ApiCacheRoundDatetime
             0
         );
 
-        if ($isFloor || $floored == $dateTime) {
+        if ($isFloor || $floored->getTimestamp() === $dateTime->getTimestamp()) {
             return $floored;
         }
 
@@ -141,7 +141,7 @@ class ApiCacheRoundDatetime
             0
         );
 
-        if ($isFloor || $floored == $dateTime) {
+        if ($isFloor || $floored->getTimestamp() === $dateTime->getTimestamp()) {
             return $floored;
         }
 
@@ -152,7 +152,7 @@ class ApiCacheRoundDatetime
     {
         $floored = $dateTime->setTime(0, 0, 0);
 
-        if ($isFloor || $floored == $dateTime) {
+        if ($isFloor || $floored->getTimestamp() === $dateTime->getTimestamp()) {
             return $floored;
         }
 
@@ -167,7 +167,7 @@ class ApiCacheRoundDatetime
             1
         )->setTime(0, 0, 0);
 
-        if ($isFloor || $floored == $dateTime) {
+        if ($isFloor || $floored->getTimestamp() === $dateTime->getTimestamp()) {
             return $floored;
         }
 
