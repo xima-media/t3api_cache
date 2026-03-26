@@ -11,10 +11,16 @@ use SourceBroker\T3api\Routing\Enhancer\ResourceEnhancer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 use Xima\T3ApiCache\Annotation\ApiCache;
+use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
 
 class ResourceReflectionService
 {
     protected ?ApiCache $apiCacheAnnotation = null;
+
+    /**
+     * @var ApiCacheRoundDatetime[]
+     */
+    protected array $apiCacheRoundDatetimeAnnotations = [];
 
     private ?ApiResource $apiResource = null;
 
@@ -38,11 +44,14 @@ class ResourceReflectionService
         $annotationReader = GeneralUtility::makeInstance(AnnotationReader::class);
         /** @var ClassString $entityClass */
         $entityClass = $this->apiResource->getEntity();
-        $annotations = $annotationReader->getClassAnnotations(new \ReflectionClass($entityClass));
+        $reflectionClass = new \ReflectionClass($entityClass);
+
+        $annotations = $annotationReader->getClassAnnotations($reflectionClass);
         foreach ($annotations as $annotation) {
             if ($annotation instanceof ApiCache) {
                 $this->apiCacheAnnotation = $annotation;
-                return;
+            } elseif ($annotation instanceof ApiCacheRoundDatetime) {
+                $this->apiCacheRoundDatetimeAnnotations[] = $annotation;
             }
         }
     }
@@ -101,7 +110,52 @@ class ResourceReflectionService
             return;
         }
 
+        $validRequestParams = $this->roundDatetimeParameters($validRequestParams);
+
         $this->cacheKey = md5($this->request->getUri()->getPath() . '?' . http_build_query($validRequestParams));
+    }
+
+    /**
+     * Round datetime parameters according to @ApiCacheRoundDatetime annotations.
+     *
+     * Handles both direct parameter values (e.g. "date=123") and filter sub-parameters
+     * (e.g. "date[lt]=123", "date[gte]=456").
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    protected function roundDatetimeParameters(array $params): array
+    {
+        if (empty($this->apiCacheRoundDatetimeAnnotations)) {
+            return $params;
+        }
+
+        foreach ($this->apiCacheRoundDatetimeAnnotations as $annotation) {
+            $parameterName = $annotation->getParameterName();
+            if (!isset($params[$parameterName])) {
+                continue;
+            }
+
+            if (is_string($params[$parameterName])) {
+                $params[$parameterName] = ApiCacheRoundDatetime::roundDatetime(
+                    $params[$parameterName],
+                    $annotation->getPrecision(),
+                    $annotation->getDirection()
+                );
+            } elseif (is_array($params[$parameterName])) {
+                foreach ($params[$parameterName] as $filterKey => $filterValue) {
+                    if (is_string($filterValue)) {
+                        $params[$parameterName][$filterKey] = ApiCacheRoundDatetime::roundDatetime(
+                            $filterValue,
+                            $annotation->getPrecision(),
+                            $annotation->getDirection()
+                        );
+                    }
+                }
+            }
+        }
+
+        return $params;
     }
 
     public function getTableName(): string

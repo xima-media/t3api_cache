@@ -36,7 +36,7 @@ class News extends AbstractEntity
 
 ## Configuration
 
-There a two configuration options available:
+There are multiple configuration options available:
 
 ### `parametersToIgnore`
 
@@ -77,3 +77,78 @@ class ExampleResource extends AbstractEntity
 {
 }
 ```
+
+### `@ApiCacheRoundDatetime`
+
+When using datetime filters, clients often request the API with the current timestamp. Since the timestamp is always different,
+no cache hits occur. The `@ApiCacheRoundDatetime` annotation can be placed on the **class** to round the corresponding
+datetime filter parameter value to a configurable precision before the cache key is generated. This ensures that requests within
+the same time window produce the same cache key, significantly improving cache hit rates.
+
+Multiple `@ApiCacheRoundDatetime` annotations can be used on the same class — one per parameter.
+
+The `parameterName` specifies the base query parameter name (e.g. `"date"`), and it automatically applies to all filter
+variants of that parameter (e.g. `date=123`, `date[lt]=...`, `date[gte]=...`).
+
+The annotation accepts the following options:
+
+- `parameterName` (required): The query parameter name to apply rounding to.
+- `precision`: The rounding precision. Supported values are `minute`, `hour`, `day`, and `year`. Default is `hour`.
+- `direction` (optional): The rounding direction. Use `floor` (default) to round down or `ceil` to round up.
+
+**Example: Round a datetime filter to the nearest hour (floor)**
+
+```php
+<?php
+
+use SourceBroker\T3api\Annotation\ApiFilter;
+use SourceBroker\T3api\Filter\OrderFilter;
+use Xima\T3ApiCache\Annotation\ApiCache;
+use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
+
+/**
+* @ApiResource(
+*     collectionOperations={
+*         "get": {
+*             "path": "/event"
+*         }
+*     }
+* )
+* @ApiFilter(OrderFilter::class, properties={"date"}, arguments={"parameterName": "date"})
+* @ApiCache
+* @ApiCacheRoundDatetime(parameterName="date", precision="hour")
+*/
+class Event extends AbstractEntity
+{
+    protected \DateTime $date;
+}
+```
+
+In this example, a request with `?date=2025-03-26T09:47:12+00:00` and another with `?date=2025-03-26T09:12:45+00:00`
+will both be rounded to `2025-03-26T09:00:00+00:00`, resulting in the same cache key.
+
+Filter variants like `?date[gte]=2025-03-26T09:47:12+00:00` are also automatically rounded.
+
+**Example: Multiple datetime parameters with different precisions**
+
+```php
+<?php
+
+use Xima\T3ApiCache\Annotation\ApiCache;
+use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
+
+/**
+* ...
+* @ApiCache
+* @ApiCacheRoundDatetime(parameterName="startDate", precision="day")
+* @ApiCacheRoundDatetime(parameterName="endDate", precision="hour", direction="ceil")
+*/
+class Event extends AbstractEntity
+{
+    protected \DateTime $startDate;
+    protected \DateTime $endDate;
+}
+```
+
+The annotation supports Unix timestamps, ISO 8601 dates, and date-only strings (e.g. `2025-03-26`).
+The rounded value is returned in the same format as the input.

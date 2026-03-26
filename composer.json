@@ -24,5 +24,8 @@
 		"psr-4": {
 			"Xima\\T3ApiCache\\": "Classes"
 		}
+	},
+	"config": {
+		"lock": false
 	}
 }
