@@ -10,8 +10,6 @@ use SourceBroker\T3api\Domain\Repository\ApiResourceRepository;
 use SourceBroker\T3api\Routing\Enhancer\ResourceEnhancer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
-use SourceBroker\T3api\Annotation\Serializer\SerializedName;
-use SourceBroker\T3api\Annotation\Serializer\VirtualProperty;
 use Xima\T3ApiCache\Annotation\ApiCache;
 use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
 
@@ -55,24 +53,10 @@ class ResourceReflectionService
             }
         }
 
-        // Collect @ApiCacheRoundDatetime annotations from properties and methods
-        foreach ($reflectionClass->getProperties() as $property) {
-            $annotation = $annotationReader->getPropertyAnnotation($property, ApiCacheRoundDatetime::class);
+        // Collect @ApiCacheRoundDatetime annotations from class level
+        foreach ($annotations as $annotation) {
             if ($annotation instanceof ApiCacheRoundDatetime) {
-                $parameterName = $annotation->getParameterName()
-                    ?? $this->getSerializedName($annotationReader, property: $property)
-                    ?? $property->getName();
-                $this->apiCacheRoundDatetimeAnnotations[$parameterName] = $annotation;
-            }
-        }
-        foreach ($reflectionClass->getMethods() as $method) {
-            $annotation = $annotationReader->getMethodAnnotation($method, ApiCacheRoundDatetime::class);
-            if ($annotation instanceof ApiCacheRoundDatetime) {
-                $parameterName = $annotation->getParameterName()
-                    ?? $this->getSerializedName($annotationReader, method: $method)
-                    ?? $this->getVirtualPropertyName($annotationReader, $method)
-                    ?? $method->getName();
-                $this->apiCacheRoundDatetimeAnnotations[$parameterName] = $annotation;
+                $this->apiCacheRoundDatetimeAnnotations[] = $annotation;
             }
         }
     }
@@ -137,7 +121,10 @@ class ResourceReflectionService
     }
 
     /**
-     * Round datetime parameters according to @ApiCacheRoundDatetime annotations on properties/methods.
+     * Round datetime parameters according to @ApiCacheRoundDatetime annotations.
+     *
+     * Handles both direct parameter values (e.g. "date=123") and filter sub-parameters
+     * (e.g. "date[lt]=123", "date[gte]=456").
      *
      * @param array<string, mixed> $params
      * @return array<string, mixed>
@@ -148,52 +135,32 @@ class ResourceReflectionService
             return $params;
         }
 
-        foreach ($this->apiCacheRoundDatetimeAnnotations as $parameterName => $annotation) {
-            if (isset($params[$parameterName]) && is_string($params[$parameterName])) {
+        foreach ($this->apiCacheRoundDatetimeAnnotations as $annotation) {
+            $parameterName = $annotation->getParameterName();
+            if (!isset($params[$parameterName])) {
+                continue;
+            }
+
+            if (is_string($params[$parameterName])) {
                 $params[$parameterName] = ApiCacheRoundDatetime::roundDatetime(
                     $params[$parameterName],
                     $annotation->getPrecision(),
                     $annotation->getDirection()
                 );
+            } elseif (is_array($params[$parameterName])) {
+                foreach ($params[$parameterName] as $filterKey => $filterValue) {
+                    if (is_string($filterValue)) {
+                        $params[$parameterName][$filterKey] = ApiCacheRoundDatetime::roundDatetime(
+                            $filterValue,
+                            $annotation->getPrecision(),
+                            $annotation->getDirection()
+                        );
+                    }
+                }
             }
         }
 
         return $params;
-    }
-
-    /**
-     * Get the serialized name from a @SerializedName annotation on a property or method.
-     */
-    private function getSerializedName(
-        AnnotationReader $annotationReader,
-        ?\ReflectionProperty $property = null,
-        ?\ReflectionMethod $method = null
-    ): ?string {
-        $annotation = null;
-        if ($property !== null) {
-            $annotation = $annotationReader->getPropertyAnnotation($property, SerializedName::class);
-        } elseif ($method !== null) {
-            $annotation = $annotationReader->getMethodAnnotation($method, SerializedName::class);
-        }
-
-        if ($annotation instanceof SerializedName && !empty($annotation->name)) {
-            return $annotation->name;
-        }
-
-        return null;
-    }
-
-    /**
-     * Get the virtual property name from a @VirtualProperty annotation on a method.
-     */
-    private function getVirtualPropertyName(AnnotationReader $annotationReader, \ReflectionMethod $method): ?string
-    {
-        $annotation = $annotationReader->getMethodAnnotation($method, VirtualProperty::class);
-        if ($annotation instanceof VirtualProperty && !empty($annotation->name)) {
-            return $annotation->name;
-        }
-
-        return null;
     }
 
     public function getTableName(): string

@@ -4,10 +4,16 @@ namespace Xima\T3ApiCache\Annotation;
 
 /**
  * @Annotation
- * @Target({"PROPERTY", "METHOD"})
+ * @Target({"CLASS"})
  */
 class ApiCacheRoundDatetime
 {
+    /**
+     * Query parameter name to apply rounding to. Matches the parameter and all its filter
+     * variants (e.g. "date" resolves to "date", "date[lt]", "date[gte]", etc.).
+     */
+    protected string $parameterName;
+
     /**
      * Rounding precision: "minute", "hour", "day", "year"
      */
@@ -18,11 +24,6 @@ class ApiCacheRoundDatetime
      */
     protected string $direction = 'floor';
 
-    /**
-     * Optional query parameter name override. If not set, the property/method name is used.
-     */
-    protected ?string $parameterName = null;
-
     private const ALLOWED_PRECISIONS = ['minute', 'hour', 'day', 'year'];
     private const ALLOWED_DIRECTIONS = ['floor', 'ceil'];
 
@@ -31,6 +32,11 @@ class ApiCacheRoundDatetime
      */
     public function __construct(array $options = [])
     {
+        if (!isset($options['parameterName']) && !isset($options['value'])) {
+            throw new \InvalidArgumentException('The "parameterName" option is required for @ApiCacheRoundDatetime.');
+        }
+        $this->parameterName = $options['parameterName'] ?? $options['value'];
+
         if (isset($options['precision'])) {
             if (!in_array($options['precision'], self::ALLOWED_PRECISIONS, true)) {
                 throw new \InvalidArgumentException(
@@ -55,9 +61,6 @@ class ApiCacheRoundDatetime
             }
             $this->direction = $options['direction'];
         }
-        if (isset($options['parameterName'])) {
-            $this->parameterName = $options['parameterName'];
-        }
     }
 
     public function getPrecision(): string
@@ -70,7 +73,7 @@ class ApiCacheRoundDatetime
         return $this->direction;
     }
 
-    public function getParameterName(): ?string
+    public function getParameterName(): string
     {
         return $this->parameterName;
     }
