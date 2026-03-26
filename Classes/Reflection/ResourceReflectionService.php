@@ -11,10 +11,13 @@ use SourceBroker\T3api\Routing\Enhancer\ResourceEnhancer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 use Xima\T3ApiCache\Annotation\ApiCache;
+use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
 
 class ResourceReflectionService
 {
     protected ?ApiCache $apiCacheAnnotation = null;
+
+    protected ?ApiCacheRoundDatetime $apiCacheRoundDatetimeAnnotation = null;
 
     private ?ApiResource $apiResource = null;
 
@@ -42,7 +45,9 @@ class ResourceReflectionService
         foreach ($annotations as $annotation) {
             if ($annotation instanceof ApiCache) {
                 $this->apiCacheAnnotation = $annotation;
-                return;
+            }
+            if ($annotation instanceof ApiCacheRoundDatetime) {
+                $this->apiCacheRoundDatetimeAnnotation = $annotation;
             }
         }
     }
@@ -101,7 +106,35 @@ class ResourceReflectionService
             return;
         }
 
+        $validRequestParams = $this->roundDatetimeParameters($validRequestParams);
+
         $this->cacheKey = md5($this->request->getUri()->getPath() . '?' . http_build_query($validRequestParams));
+    }
+
+    /**
+     * Round datetime parameters according to the @ApiCacheRoundDatetime annotation.
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     */
+    protected function roundDatetimeParameters(array $params): array
+    {
+        if (!$this->apiCacheRoundDatetimeAnnotation) {
+            return $params;
+        }
+
+        $direction = $this->apiCacheRoundDatetimeAnnotation->getDirection();
+        foreach ($this->apiCacheRoundDatetimeAnnotation->getParameters() as $parameterName => $precision) {
+            if (isset($params[$parameterName]) && is_string($params[$parameterName])) {
+                $params[$parameterName] = ApiCacheRoundDatetime::roundDatetime(
+                    $params[$parameterName],
+                    $precision,
+                    $direction
+                );
+            }
+        }
+
+        return $params;
     }
 
     public function getTableName(): string
