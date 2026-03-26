@@ -81,17 +81,20 @@ class ExampleResource extends AbstractEntity
 ### `@ApiCacheRoundDatetime`
 
 When using datetime filters, clients often request the API with the current timestamp. Since the timestamp is always different,
-no cache hits occur. The `@ApiCacheRoundDatetime` annotation can be placed on **properties or methods** to round the corresponding
+no cache hits occur. The `@ApiCacheRoundDatetime` annotation can be placed on the **class** to round the corresponding
 datetime filter parameter value to a configurable precision before the cache key is generated. This ensures that requests within
 the same time window produce the same cache key, significantly improving cache hit rates.
 
-Multiple `@ApiCacheRoundDatetime` annotations can be used — one per property or method.
+Multiple `@ApiCacheRoundDatetime` annotations can be used on the same class — one per parameter.
+
+The `parameterName` specifies the base query parameter name (e.g. `"date"`), and it automatically applies to all filter
+variants of that parameter (e.g. `date=123`, `date[lt]=...`, `date[gte]=...`).
 
 The annotation accepts the following options:
 
+- `parameterName` (required): The query parameter name to apply rounding to.
 - `precision`: The rounding precision. Supported values are `minute`, `hour`, `day`, and `year`. Default is `hour`.
 - `direction` (optional): The rounding direction. Use `floor` (default) to round down or `ceil` to round up.
-- `parameterName` (optional): Override the query parameter name. If not set, the property or method name is used.
 
 **Example: Round a datetime filter to the nearest hour (floor)**
 
@@ -113,12 +116,10 @@ use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
 * )
 * @ApiFilter(OrderFilter::class, properties={"date"}, arguments={"parameterName": "date"})
 * @ApiCache
+* @ApiCacheRoundDatetime(parameterName="date", precision="hour")
 */
 class Event extends AbstractEntity
 {
-    /**
-     * @ApiCacheRoundDatetime(precision="hour")
-     */
     protected \DateTime $date;
 }
 ```
@@ -126,7 +127,9 @@ class Event extends AbstractEntity
 In this example, a request with `?date=2025-03-26T09:47:12+00:00` and another with `?date=2025-03-26T09:12:45+00:00`
 will both be rounded to `2025-03-26T09:00:00+00:00`, resulting in the same cache key.
 
-**Example: Multiple datetime properties with different precisions**
+Filter variants like `?date[gte]=2025-03-26T09:47:12+00:00` are also automatically rounded.
+
+**Example: Multiple datetime parameters with different precisions**
 
 ```php
 <?php
@@ -137,82 +140,15 @@ use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
 /**
 * ...
 * @ApiCache
+* @ApiCacheRoundDatetime(parameterName="startDate", precision="day")
+* @ApiCacheRoundDatetime(parameterName="endDate", precision="hour", direction="ceil")
 */
 class Event extends AbstractEntity
 {
-    /**
-     * @ApiCacheRoundDatetime(precision="day")
-     */
     protected \DateTime $startDate;
-
-    /**
-     * @ApiCacheRoundDatetime(precision="hour", direction="ceil")
-     */
     protected \DateTime $endDate;
 }
 ```
-
-**Example: Custom query parameter name**
-
-If the query parameter name differs from the property name, use the `parameterName` option:
-
-```php
-<?php
-
-use Xima\T3ApiCache\Annotation\ApiCache;
-use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
-
-/**
-* ...
-* @ApiCache
-*/
-class Event extends AbstractEntity
-{
-    /**
-     * @ApiCacheRoundDatetime(precision="hour", parameterName="filter[date]")
-     */
-    protected \DateTime $date;
-}
-```
-
-**Example: VirtualProperty with SerializedName**
-
-When using a custom serialized name via `@VirtualProperty` and `@SerializedName`, the annotation
-automatically picks up the serialized name as the query parameter name — no need to specify `parameterName` manually:
-
-```php
-<?php
-
-use SourceBroker\T3api\Annotation\Serializer\SerializedName;
-use SourceBroker\T3api\Annotation\Serializer\VirtualProperty;
-use Xima\T3ApiCache\Annotation\ApiCache;
-use Xima\T3ApiCache\Annotation\ApiCacheRoundDatetime;
-
-/**
-* ...
-* @ApiCache
-*/
-class Event extends AbstractEntity
-{
-    /**
-     * @VirtualProperty
-     * @SerializedName("event_date")
-     * @ApiCacheRoundDatetime(precision="hour")
-     */
-    public function getEventDate(): string
-    {
-        return $this->date->format('c');
-    }
-}
-```
-
-In this example, the query parameter `event_date` will be automatically rounded. The parameter name resolution
-follows this priority:
-
-1. Explicit `parameterName` on `@ApiCacheRoundDatetime`
-2. `@SerializedName` value (on property or method)
-3. `@VirtualProperty` name (on method, if set)
-4. PHP property or method name
 
 The annotation supports Unix timestamps, ISO 8601 dates, and date-only strings (e.g. `2025-03-26`).
 The rounded value is returned in the same format as the input.
