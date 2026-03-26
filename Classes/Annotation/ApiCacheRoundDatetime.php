@@ -4,22 +4,24 @@ namespace Xima\T3ApiCache\Annotation;
 
 /**
  * @Annotation
- * @Target({"CLASS"})
+ * @Target({"PROPERTY", "METHOD"})
  */
 class ApiCacheRoundDatetime
 {
     /**
-     * Map of parameter names to rounding precision.
-     * Allowed precision values: "minute", "hour", "day", "year"
-     *
-     * @var array<string, string>
+     * Rounding precision: "minute", "hour", "day", "year"
      */
-    protected array $parameters = [];
+    protected string $precision = 'hour';
 
     /**
      * Rounding direction: "floor" (round down) or "ceil" (round up)
      */
     protected string $direction = 'floor';
+
+    /**
+     * Optional query parameter name override. If not set, the property/method name is used.
+     */
+    protected ?string $parameterName = null;
 
     private const ALLOWED_PRECISIONS = ['minute', 'hour', 'day', 'year'];
     private const ALLOWED_DIRECTIONS = ['floor', 'ceil'];
@@ -29,20 +31,17 @@ class ApiCacheRoundDatetime
      */
     public function __construct(array $options = [])
     {
-        if (isset($options['parameters'])) {
-            foreach ($options['parameters'] as $parameterName => $precision) {
-                if (!in_array($precision, self::ALLOWED_PRECISIONS, true)) {
-                    throw new \InvalidArgumentException(
-                        sprintf(
-                            'Invalid precision "%s" for parameter "%s". Allowed values: %s',
-                            $precision,
-                            $parameterName,
-                            implode(', ', self::ALLOWED_PRECISIONS)
-                        )
-                    );
-                }
+        if (isset($options['precision'])) {
+            if (!in_array($options['precision'], self::ALLOWED_PRECISIONS, true)) {
+                throw new \InvalidArgumentException(
+                    sprintf(
+                        'Invalid precision "%s". Allowed values: %s',
+                        $options['precision'],
+                        implode(', ', self::ALLOWED_PRECISIONS)
+                    )
+                );
             }
-            $this->parameters = $options['parameters'];
+            $this->precision = $options['precision'];
         }
         if (isset($options['direction'])) {
             if (!in_array($options['direction'], self::ALLOWED_DIRECTIONS, true)) {
@@ -56,19 +55,24 @@ class ApiCacheRoundDatetime
             }
             $this->direction = $options['direction'];
         }
+        if (isset($options['parameterName'])) {
+            $this->parameterName = $options['parameterName'];
+        }
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function getParameters(): array
+    public function getPrecision(): string
     {
-        return $this->parameters;
+        return $this->precision;
     }
 
     public function getDirection(): string
     {
         return $this->direction;
+    }
+
+    public function getParameterName(): ?string
+    {
+        return $this->parameterName;
     }
 
     /**

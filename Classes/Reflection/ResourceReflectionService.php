@@ -17,7 +17,10 @@ class ResourceReflectionService
 {
     protected ?ApiCache $apiCacheAnnotation = null;
 
-    protected ?ApiCacheRoundDatetime $apiCacheRoundDatetimeAnnotation = null;
+    /**
+     * @var ApiCacheRoundDatetime[]
+     */
+    protected array $apiCacheRoundDatetimeAnnotations = [];
 
     private ?ApiResource $apiResource = null;
 
@@ -41,14 +44,28 @@ class ResourceReflectionService
         $annotationReader = GeneralUtility::makeInstance(AnnotationReader::class);
         /** @var ClassString $entityClass */
         $entityClass = $this->apiResource->getEntity();
-        $annotations = $annotationReader->getClassAnnotations(new \ReflectionClass($entityClass));
+        $reflectionClass = new \ReflectionClass($entityClass);
+
+        $annotations = $annotationReader->getClassAnnotations($reflectionClass);
         foreach ($annotations as $annotation) {
             if ($annotation instanceof ApiCache) {
                 $this->apiCacheAnnotation = $annotation;
             }
-            // Collect both ApiCache and ApiCacheRoundDatetime annotations
+        }
+
+        // Collect @ApiCacheRoundDatetime annotations from properties and methods
+        foreach ($reflectionClass->getProperties() as $property) {
+            $annotation = $annotationReader->getPropertyAnnotation($property, ApiCacheRoundDatetime::class);
             if ($annotation instanceof ApiCacheRoundDatetime) {
-                $this->apiCacheRoundDatetimeAnnotation = $annotation;
+                $parameterName = $annotation->getParameterName() ?? $property->getName();
+                $this->apiCacheRoundDatetimeAnnotations[$parameterName] = $annotation;
+            }
+        }
+        foreach ($reflectionClass->getMethods() as $method) {
+            $annotation = $annotationReader->getMethodAnnotation($method, ApiCacheRoundDatetime::class);
+            if ($annotation instanceof ApiCacheRoundDatetime) {
+                $parameterName = $annotation->getParameterName() ?? $method->getName();
+                $this->apiCacheRoundDatetimeAnnotations[$parameterName] = $annotation;
             }
         }
     }
@@ -113,24 +130,23 @@ class ResourceReflectionService
     }
 
     /**
-     * Round datetime parameters according to the @ApiCacheRoundDatetime annotation.
+     * Round datetime parameters according to @ApiCacheRoundDatetime annotations on properties/methods.
      *
      * @param array<string, mixed> $params
      * @return array<string, mixed>
      */
     protected function roundDatetimeParameters(array $params): array
     {
-        if (!$this->apiCacheRoundDatetimeAnnotation) {
+        if (empty($this->apiCacheRoundDatetimeAnnotations)) {
             return $params;
         }
 
-        $direction = $this->apiCacheRoundDatetimeAnnotation->getDirection();
-        foreach ($this->apiCacheRoundDatetimeAnnotation->getParameters() as $parameterName => $precision) {
+        foreach ($this->apiCacheRoundDatetimeAnnotations as $parameterName => $annotation) {
             if (isset($params[$parameterName]) && is_string($params[$parameterName])) {
                 $params[$parameterName] = ApiCacheRoundDatetime::roundDatetime(
                     $params[$parameterName],
-                    $precision,
-                    $direction
+                    $annotation->getPrecision(),
+                    $annotation->getDirection()
                 );
             }
         }
