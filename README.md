@@ -12,6 +12,8 @@ composer require xima/t3api-cache
 
 ## Usage
 
+> **Breaking Change (v1.0.0):** The table name is now included as a cache tag by default. This means that creating, updating, or deleting any record of the table will flush all related cache entries. If you previously relied on the behavior without table name tags (v0.x), add `disableTableNameTag=true` to your `@ApiCache` annotation to restore the old behavior.
+
 The extension provides a new Annotation `@ApiCache` which can be used in your `ApiResource` class to active caching for the specific resource:
 
 ```php
@@ -72,6 +74,24 @@ use Xima\T3ApiCache\Annotation\ApiCache;
 /**
 * ...
 * @ApiCache(lifetime=3600) // Cache lifetime set to 1 hour
+*/
+class ExampleResource extends AbstractEntity
+{
+}
+```
+
+### `disableTableNameTag`
+
+By default, the table name is added as a cache tag to all cache entries. This means that when any record of that table is created, updated, or deleted, all cache entries for that table are flushed. If you want to disable this behavior and only flush cache entries for the specific record that was changed, set `disableTableNameTag=true`.
+
+```php
+<?php
+
+use Xima\T3ApiCache\Annotation\ApiCache;
+
+/**
+* ...
+* @ApiCache(disableTableNameTag=true)
 */
 class ExampleResource extends AbstractEntity
 {

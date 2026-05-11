@@ -9,15 +9,21 @@ class ApiCacheAspect implements AspectInterface
 {
     protected bool $apiCacheActive = false;
 
-    public function __construct(bool $apiCacheActive)
+    protected bool $disableTableNameTag = false;
+
+    public function __construct(bool $apiCacheActive, bool $disableTableNameTag = false)
     {
         $this->apiCacheActive = $apiCacheActive;
+        $this->disableTableNameTag = $disableTableNameTag;
     }
 
     public function get(string $name): bool
     {
         if ($name === 'isActive') {
             return $this->apiCacheActive;
+        }
+        if ($name === 'disableTableNameTag') {
+            return $this->disableTableNameTag;
         }
         throw new AspectPropertyNotFoundException('Property "' . $name . '" not found in Aspect "' . __CLASS__ . '".', 1735135381);
     }

@@ -52,6 +52,14 @@ readonly class CacheTagSubscriber implements EventSubscriberInterface
                 new StaticPropertyMetadata(AbstractDomainObject::class, '@cache_tag', $cacheTag),
                 $cacheTag
             );
+
+            $disableTableNameTag = $this->context->getPropertyFromAspect('t3api_cache', 'disableTableNameTag');
+            if (!$disableTableNameTag) {
+                $visitor->visitProperty(
+                    new StaticPropertyMetadata(AbstractDomainObject::class, '@cache_tag_table', $tableName),
+                    $tableName
+                );
+            }
         }
     }
 }
