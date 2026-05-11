@@ -15,6 +15,8 @@ class ApiCache
 
     protected ?int $lifetime = null;
 
+    protected bool $disableTableNameTag = false;
+
     /**
      * @param array<string, mixed> $options
      */
@@ -25,6 +27,9 @@ class ApiCache
         }
         if (isset($options['lifetime'])) {
             $this->lifetime = $options['lifetime'];
+        }
+        if (isset($options['disableTableNameTag'])) {
+            $this->disableTableNameTag = (bool)$options['disableTableNameTag'];
         }
     }
 
@@ -39,5 +44,10 @@ class ApiCache
     public function getParametersToIgnore(): array
     {
         return $this->parametersToIgnore;
+    }
+
+    public function isTableNameTagDisabled(): bool
+    {
+        return $this->disableTableNameTag;
     }
 }

@@ -43,7 +43,8 @@ readonly class T3ApiCache implements MiddlewareInterface
             return $response;
         }
 
-        $this->context->setAspect('t3api_cache', new ApiCacheAspect(true));
+        $disableTableNameTag = $reflectionService->getApiCacheAnnotation()?->isTableNameTagDisabled() ?? false;
+        $this->context->setAspect('t3api_cache', new ApiCacheAspect(true, $disableTableNameTag));
 
         $response = $handler->handle($request);
         $data = (string)$response->getBody();
@@ -68,7 +69,7 @@ readonly class T3ApiCache implements MiddlewareInterface
         foreach ($data as $key => &$value) {
             if (is_array($value)) {
                 $value = self::collectAndRemoveCacheTags($value, $cacheTags);
-            } elseif ($key === '@cache_tag') {
+            } elseif ($key === '@cache_tag' || $key === '@cache_tag_table') {
                 unset($data[$key]);
                 if (!in_array($value, $cacheTags, true)) {
                     $cacheTags[] = $value;
